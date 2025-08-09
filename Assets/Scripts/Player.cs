@@ -12,6 +12,14 @@ public class Player : MonoBehaviour
     public Sprite[] spriteArr;
     private int spriteIndex;
 
+    // 🔼 Double Tap fields
+    private float lastTapTime = 0f;
+    private float doubleTapThreshold = 0.3f;
+    public float doubleTapBoostStrength = 10f;
+
+    // 🔽 Swipe Down fields
+    private Vector2 touchStartPos;
+
     public void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
@@ -19,10 +27,46 @@ public class Player : MonoBehaviour
 
     public void Update()
     {
+       
         if (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Mouse0))
         {
             direction = Vector3.up * strength;
         }
+
+        // 📱 Mobile Touch Controls
+        if (Input.touchCount > 0)
+        {
+            Touch touch = Input.GetTouch(0);
+
+            if (touch.phase == TouchPhase.Began)
+            {
+                // Store start pos for swipe
+                touchStartPos = touch.position;
+
+                // Check for double tap
+                float currentTime = Time.time;
+                if (currentTime - lastTapTime < doubleTapThreshold)
+                {
+                    direction = Vector3.up * doubleTapBoostStrength; // 💥 Double Tap Boost
+                }
+                else
+                {
+                    direction = Vector3.up * strength;
+                }
+                lastTapTime = currentTime;
+            }
+            else if (touch.phase == TouchPhase.Ended)
+            {
+                Vector2 touchEndPos = touch.position;
+                float swipeDistanceY = touchStartPos.y - touchEndPos.y;
+
+                if (swipeDistanceY > 100f)
+                {
+                    direction = Vector3.down * strength * 1.5f; 
+                }
+            }
+        }
+
         direction.y += gravity * Time.deltaTime;
         transform.position += direction * Time.deltaTime;
     }
